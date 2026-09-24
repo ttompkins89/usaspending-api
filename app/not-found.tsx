@@ -1,14 +1,14 @@
 import Link from 'next/link';
+import { DocPage } from '@/components/DocPage';
 
 export default function NotFound() {
   return (
-    <div className="page-narrow">
-      <header className="page-head">
-        <p className="eyebrow">404</p>
-        <h1>That page isn&apos;t here</h1>
-        <p className="lede">The endpoint may have moved to a different feature, or been removed from the API contracts.</p>
-      </header>
-      <p><Link className="button" href="/reference">Browse all endpoints</Link></p>
-    </div>
+    <DocPage wide title="Page not found" lede="That page isn't here. It may have moved when the docs were reorganized around the site's menus.">
+      <div className="hero-actions">
+        <Link href="/" className="button">Go to the overview</Link>
+        <Link href="/reference" className="button button-ghost">Browse the API reference</Link>
+      </div>
+      <p className="muted" style={{ marginTop: 'var(--s-3)' }}>Tip: press <kbd>⌘K</kbd> or <kbd>/</kbd> to search.</p>
+    </DocPage>
   );
 }

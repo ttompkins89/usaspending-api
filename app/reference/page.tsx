@@ -1,48 +1,40 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { docs, sectionFeatures, featureEndpoints, endpointHref, siteUrl } from '@/lib/docs';
+import { docs, sectionFeatures, featureEndpoints, endpointHref, methodCounts } from '@/lib/docs';
+import { DocPage } from '@/components/DocPage';
 import { MethodBadge } from '@/components/MethodBadge';
-import { Sidebar } from '@/components/Sidebar';
 
-export const metadata: Metadata = { title: 'Reference' };
+export const metadata: Metadata = { title: 'API reference', description: 'Every USAspending API endpoint, grouped by the usaspending.gov feature that calls it.' };
 
 export default function Reference() {
+  const counts = methodCounts(docs.endpoints);
   return (
-    <div className="with-sidebar">
-      <Sidebar />
-      <div className="content">
-        <header className="page-head">
-          <p className="eyebrow">Reference</p>
-          <h1>All {docs.endpoints.length} endpoints</h1>
-          <p className="lede">Grouped by the usaspending.gov feature each one powers, under the site&apos;s four menus.</p>
-        </header>
-        {docs.sections.map((s) => (
-          <section key={s.id} className="ref-section" aria-labelledby={`sec-${s.id}`}>
-            <h2 id={`sec-${s.id}`}>{s.title}</h2>
-            <p className="muted">{s.blurb}</p>
-            {sectionFeatures(s.id).map((f) => (
-              <div key={f.id} className="ref-feature">
-                <div className="ref-feature-head">
-                  <h3><Link href={`/reference/${f.id}`}>{f.title}</Link></h3>
-                  {siteUrl(f.siteRoute) ? <a className="site-link" href={siteUrl(f.siteRoute)!}>On usaspending.gov <span aria-hidden="true">↗</span></a> : null}
-                </div>
-                <ul className="endpoint-list">
-                  {featureEndpoints(f).map((e) => (
-                    <li key={e.id}>
-                      <Link href={endpointHref(e)}>
-                        <MethodBadge method={e.method} size="sm" />
-                        <span className="endpoint-title">{e.title}</span>
-                        <code className="endpoint-path">{e.path.replace('/api', '')}</code>
-                        {e.status !== 'stable' ? <span className={`status status-${e.status}`}>{e.status === 'in-development' ? 'In development' : 'Deprecated'}</span> : null}
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
+    <DocPage
+      crumbs={[{ href: '/', label: 'Overview' }, { label: 'API reference' }]}
+      title="API reference"
+      lede={<>All {docs.endpoints.length} endpoints, grouped under usaspending.gov&apos;s four menus and the feature that calls each one.</>}
+      head={<div className="feature-links"><span className="method-counts">{Object.entries(counts).map(([m, n]) => <span key={m} className="pills"><MethodBadge method={m} size="sm" /><span className="muted">{n}</span></span>)}</span></div>}
+      toc={docs.sections.map((s) => ({ id: s.id, text: s.title, level: 2 as const }))}
+    >
+      {docs.sections.map((s) => (
+        <section key={s.id} className="ref-section" aria-labelledby={s.id}>
+          <h2 id={s.id}>{s.title}</h2>
+          <p className="muted">{s.blurb}</p>
+          {sectionFeatures(s.id).map((f) => (
+            <div key={f.id} className="ref-feature">
+              <div className="ref-feature-head">
+                <h3 id={`f-${f.id}`}><Link href={`/reference/${f.id}`}>{f.title}</Link></h3>
+                <span className="count">{f.endpointIds.length}</span>
               </div>
-            ))}
-          </section>
-        ))}
-      </div>
-    </div>
+              <ul className="ref-rows">
+                {featureEndpoints(f).map((e) => (
+                  <li key={e.id}><Link href={endpointHref(e)}><MethodBadge method={e.method} size="sm" /><span>{e.title}</span><code>{e.path}</code></Link></li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </section>
+      ))}
+    </DocPage>
   );
 }

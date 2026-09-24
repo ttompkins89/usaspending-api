@@ -23,7 +23,7 @@ function getContracts() {
   if (process.env.CONTRACTS_DIR) return { dir: path.resolve(process.env.CONTRACTS_DIR), sha: process.env.CONTRACTS_SHA || null };
   const dest = path.join(ROOT, '.contracts');
   fs.rmSync(dest, { recursive: true, force: true });
-  execSync(`git clone --depth 1 --filter=blob:none --sparse ${REPO}.git "${dest}"`, { stdio: 'inherit' });
+  execSync(`git clone --filter=blob:none --sparse ${REPO}.git "${dest}"`, { stdio: 'inherit' });
   execSync(`git -C "${dest}" sparse-checkout set --no-cone '/${CONTRACT_SUBDIR}/'`, { stdio: 'inherit' });
   const sha = execSync(`git -C "${dest}" rev-parse HEAD`).toString().trim();
   return { dir: path.join(dest, CONTRACT_SUBDIR), sha };
@@ -36,7 +36,7 @@ const tick = (v) => (typeof v === 'string' ? v.replace(/^`(.*)`$/s, '$1') : v);
 const str = (x) => (x == null ? '' : typeof x === 'string' ? x : typeof x.content === 'string' ? x.content : '');
 const metaStr = (e, k) => fixLinks(str(e?.meta?.[k]).trim());
 // Contract prose links to the shared filter guide by relative path; point those at our filter page.
-function fixLinks(t) { return t.replace(/\((?:\.\.\/)+search_filters\.md(#[^)]*)?\)/g, (_, h) => `(/start/filters${h || ''})`); }
+function fixLinks(t) { return t.replace(/\((?:\.\.\/)+search_filters\.md(#[^)]*)?\)/g, (_, h) => `(/filters${h || ''})`); }
 const cls = (e) => (e?.meta?.classes?.content || []).map((c) => c.content);
 const BASE = new Set(['string', 'number', 'boolean', 'object', 'array', 'enum', 'select', 'option', 'null', 'member', 'ref', 'extend']);
 
@@ -278,6 +278,7 @@ function build() {
           pathInferred: p.inferredPath ? true : undefined,
           contractNotes: p.notes.length ? p.notes : undefined,
         };
+        addMissingPathParams(e, p.src);
         endpoints.push(e);
         count++;
       }
@@ -323,4 +324,22 @@ try {
   } else {
     throw err;
   }
+}
+
+// Some contracts put {placeholders} in the URL without declaring them (or declare them in a
+// non-standard spot drafter can't read). Add them so the page and the console can fill them in,
+// take an example from the contract text when there is one, and say so in a contract note.
+function addMissingPathParams(e, src) {
+  const names = [...e.path.matchAll(/\{(\w+)\}/g)].map((m) => m[1]);
+  const have = new Set((e.params || []).filter((x) => x.in === 'path').map((x) => x.name));
+  const missing = names.filter((n) => !have.has(n));
+  if (!missing.length) return;
+  const added = missing.map((name) => {
+    const m = src.match(new RegExp('\\+\\s+`?' + name + '`?\\s*:\\s*`?([^`\\s(]+)`?\\s*\\(([^)]*)\\)(?:\\s*-\\s*(.+))?'));
+    const param = { name, in: 'path', required: true, type: 'string' };
+    if (m) { param.example = m[1]; if (m[3]) param.description = m[3].trim(); }
+    return param;
+  });
+  e.params = [...added, ...(e.params || [])];
+  e.contractNotes = [...(e.contractNotes || []), `The contract doesn't declare ${missing.map((n) => `\`${n}\``).join(' and ')} in its URL template, so ${missing.length === 1 ? 'it was' : 'they were'} added here from the path.`];
 }

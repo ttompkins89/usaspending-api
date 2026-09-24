@@ -1,6 +1,9 @@
 node_modules
 .next
 .contracts
+.site
+.wiki
+next-env.d.ts
 *.tsbuildinfo
 .vercel
 .env*

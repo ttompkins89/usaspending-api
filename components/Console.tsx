@@ -10,7 +10,7 @@ function initial(p: Param) {
   return v === undefined || v === null ? '' : typeof v === 'string' ? v : JSON.stringify(v);
 }
 
-export function Console({ method, path, params = [], requestExample }: { method: string; path: string; params?: Param[]; requestExample?: string }) {
+export function Console({ method, path, params = [], requestExample, compact: small }: { method: string; path: string; params?: Param[]; requestExample?: string; compact?: boolean }) {
   const [values, setValues] = useState<Record<string, string>>(() => Object.fromEntries(params.map((p) => [p.name || '', initial(p)])));
   const [body, setBody] = useState(requestExample || '{}');
   const [state, setState] = useState<{ status?: number; ms?: number; text?: string; error?: string; loading?: boolean; truncated?: boolean }>({});
@@ -32,9 +32,6 @@ export function Console({ method, path, params = [], requestExample }: { method:
     try { JSON.parse(body); } catch { bodyError = 'The request body isn’t valid JSON yet.'; }
   }
 
-  const curl = method === 'POST'
-    ? `curl -X POST '${API}${built.url}' \\\n  -H 'Content-Type: application/json' \\\n  -d '${compact(body)}'`
-    : `curl '${API}${built.url}'`;
 
   async function send() {
     setState({ loading: true });
@@ -56,11 +53,12 @@ export function Console({ method, path, params = [], requestExample }: { method:
   }
 
   return (
-    <section className="console" aria-labelledby="console-title">
+    <section className="console" aria-labelledby="try-it" data-toc-skip={small ? true : undefined}>
       <div className="console-head">
-        <h2 id="console-title">Try it</h2>
+        <h2 id="try-it">Try it</h2>
         <p>Runs against the live API. Responses are real data.</p>
       </div>
+      <div className="console-inner">
       <div className="console-url"><span className={`method method-${method.toLowerCase()} method-sm`}>{method}</span><code>{built.url}</code></div>
       {params.length ? (
         <div className="console-params">
@@ -92,15 +90,11 @@ export function Console({ method, path, params = [], requestExample }: { method:
         </div>
       ) : null}
       <div className="console-actions">
-        <button type="button" className="button" onClick={send} disabled={state.loading || !!bodyError || built.missing}>
+        <button type="button" className="button button-lg" onClick={send} disabled={state.loading || !!bodyError || built.missing}>
           {state.loading ? 'Sending…' : 'Send request'}
         </button>
         {built.missing ? <span className="muted">Fill in the path parameters first.</span> : null}
       </div>
-      <details className="console-curl">
-        <summary>Copy as curl</summary>
-        <pre tabIndex={0}><code>{curl}</code></pre>
-      </details>
       <div aria-live="polite">
         {state.error ? <p className="console-error">{state.error}</p> : null}
         {state.status !== undefined ? (
@@ -109,14 +103,11 @@ export function Console({ method, path, params = [], requestExample }: { method:
               <span className={state.status < 400 ? 'ok' : 'bad'}>{state.status}</span> in {state.ms} ms
               {state.truncated ? <span className="muted"> · showing the first part of a large response</span> : null}
             </p>
-            <pre tabIndex={0} className="console-response"><code>{state.text}</code></pre>
+            <pre tabIndex={0} className="console-response" aria-label="Response body"><code>{state.text}</code></pre>
           </div>
         ) : null}
       </div>
+      </div>
     </section>
   );
-}
-
-function compact(s: string) {
-  try { return JSON.stringify(JSON.parse(s)).replace(/'/g, "'\\''"); } catch { return s.replace(/'/g, "'\\''"); }
 }

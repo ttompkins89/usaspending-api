@@ -31,7 +31,7 @@ async function forward(req: NextRequest, segments: string[], method: 'GET' | 'PO
     const res = await fetch(url, {
       method,
       body,
-      headers: { 'content-type': 'application/json', accept: 'application/json', 'user-agent': 'Tally API docs live console (usaspending-api.vercel.app)' },
+      headers: { 'content-type': 'application/json', accept: 'application/json', 'user-agent': 'USAspending API Reference live console (usaspending-api.vercel.app)' },
       signal: ctrl.signal,
       cache: 'no-store',
     });
@@ -54,9 +54,10 @@ async function forward(req: NextRequest, segments: string[], method: 'GET' | 'PO
   }
 }
 
-export async function GET(req: NextRequest, { params }: { params: { path: string[] } }) {
-  return forward(req, params.path, 'GET');
+type Ctx = { params: Promise<{ path: string[] }> };
+export async function GET(req: NextRequest, { params }: Ctx) {
+  return forward(req, (await params).path, 'GET');
 }
-export async function POST(req: NextRequest, { params }: { params: { path: string[] } }) {
-  return forward(req, params.path, 'POST');
+export async function POST(req: NextRequest, { params }: Ctx) {
+  return forward(req, (await params).path, 'POST');
 }
