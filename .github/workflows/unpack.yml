@@ -2,7 +2,7 @@ name: Unpack bundle
 on:
   push:
     paths:
-      - bootstrap.b64
+      - bootstrap.jsonl
 permissions:
   contents: write
 jobs:
@@ -10,12 +10,26 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Unpack bootstrap.b64 into the repository
+      - name: Write files from bootstrap.jsonl and verify checksums
         run: |
-          tr -d '\r ' < bootstrap.b64 | base64 -d > /tmp/repo.tar.gz
-          echo "926583506f3bf3aa1467b4b8ba11acb8e505116ae1f472df5c1ca44d2d306a2c  /tmp/repo.tar.gz" | sha256sum -c -
-          tar -xzf /tmp/repo.tar.gz
-          git rm -q bootstrap.b64
+          node -e '
+          const fs = require("fs"), path = require("path"), crypto = require("crypto");
+          const lines = fs.readFileSync("bootstrap.jsonl", "utf8").split("\n").filter((l) => l.trim());
+          const man = JSON.parse(lines[0]).manifest;
+          const bad = [];
+          lines.slice(1).forEach((l, i) => {
+            let rec;
+            try { rec = JSON.parse(l); } catch (e) { console.log("PARSE ERROR on line", i + 2, e.message, l.slice(0, 80)); process.exit(1); }
+            fs.mkdirSync(path.dirname(rec.p), { recursive: true });
+            fs.writeFileSync(rec.p, rec.c);
+            const h = crypto.createHash("sha256").update(rec.c).digest("hex").slice(0, 16);
+            if (h !== man[rec.p]) bad.push(rec.p);
+          });
+          const missing = Object.keys(man).filter((p) => !fs.existsSync(p));
+          if (bad.length || missing.length) { console.log("MISMATCH", JSON.stringify(bad), "MISSING", JSON.stringify(missing)); process.exit(1); }
+          console.log("OK", lines.length - 1, "files");
+          '
+          git rm -q bootstrap.jsonl
           git config user.name "Tanika Tompkins"
           git config user.email "ttompkins89@users.noreply.github.com"
           git add -A
