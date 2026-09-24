@@ -1,8 +1,8 @@
-name: Unpack upload
+name: Unpack bundle
 on:
   push:
     paths:
-      - repo.zip
+      - bootstrap.b64
 permissions:
   contents: write
 jobs:
@@ -10,10 +10,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Unpack repo.zip into the repository
+      - name: Unpack bootstrap.b64 into the repository
         run: |
-          unzip -o repo.zip -d .
-          git rm -q repo.zip
+          tr -d '\r ' < bootstrap.b64 | base64 -d > /tmp/repo.tar.gz
+          echo "926583506f3bf3aa1467b4b8ba11acb8e505116ae1f472df5c1ca44d2d306a2c  /tmp/repo.tar.gz" | sha256sum -c -
+          tar -xzf /tmp/repo.tar.gz
+          git rm -q bootstrap.b64
           git config user.name "Tanika Tompkins"
           git config user.email "ttompkins89@users.noreply.github.com"
           git add -A
