@@ -1,0 +1,6 @@
+node_modules
+.next
+.contracts
+*.tsbuildinfo
+.vercel
+.env*
