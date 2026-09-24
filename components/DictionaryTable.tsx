@@ -9,7 +9,8 @@ export function DictionaryTable({ headers, sections, rows }: Props) {
   const [q, setQ] = useState('');
   const [group, setGroup] = useState('');
   const [limit, setLimit] = useState(60);
-  const col = (raw: string) => headers.findIndex((h) => h.raw === raw);
+  // The live API prefixes column names with their spreadsheet letter ("B:definition").
+  const col = (raw: string) => headers.findIndex((h) => h.raw.replace(/^[A-Z]+:/, '') === raw);
   const iEl = Math.max(0, col('element'));
   const iDef = col('definition');
   const iGroup = col('grouping');
