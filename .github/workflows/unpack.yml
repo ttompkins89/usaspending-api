@@ -1,0 +1,21 @@
+name: Unpack upload
+on:
+  push:
+    paths:
+      - repo.zip
+permissions:
+  contents: write
+jobs:
+  unpack:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Unpack repo.zip into the repository
+        run: |
+          unzip -o repo.zip -d .
+          git rm -q repo.zip
+          git config user.name "Tanika Tompkins"
+          git config user.email "ttompkins89@users.noreply.github.com"
+          git add -A
+          git commit -m "Tally: USAspending API docs, Phase 1" -m "Generator from API Blueprint contracts, feature map to usaspending.gov, reference for every endpoint, live console proxy, start here and filter pages." -m "Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>" -m "Claude-Session: https://claude.ai/code/session_01N8vxSuJdJvQFGw3ybpvr3r"
+          git push
