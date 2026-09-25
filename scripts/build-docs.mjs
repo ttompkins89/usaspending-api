@@ -157,7 +157,8 @@ function pretty(s) {
   try { return JSON.stringify(JSON.parse(s), null, 2); } catch { return s.replace(/\s+$/g, ''); }
 }
 
-const cleanPath = (href) => href.replace(/\{\?[^}]*\}/g, '').replace(/\{&[^}]*\}/g, '').replace(/\?[^{}]*$/, '');
+// A few contracts write a path segment in query syntax ("totals/{?cfda_code}/"); keep it as a path parameter.
+const cleanPath = (href) => href.replace(/\/\{\?(\w+)\}\//g, '/{$1}/').replace(/\{\?[^}]*\}/g, '').replace(/\{&[^}]*\}/g, '').replace(/\?[^{}]*$/, '');
 const slugify = (s) => s.toLowerCase().replace(/\{([^}]+)\}/g, '$1').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 
 function hrefParams(hv, ctx, pathStr) {
@@ -169,6 +170,8 @@ function hrefParams(hv, ctx, pathStr) {
     let example = conv.example;
     const v = m.content.value;
     if (example === undefined && v && v.content != null && typeof v.content !== 'object') example = tick(v.content);
+    // Some contracts write examples as "code=11"; the value is the part after the name.
+    if (typeof example === 'string' && example.startsWith(`${name}=`)) example = example.slice(name.length + 1);
     return { name, in: pathStr.includes(`{${name}}`) ? 'path' : 'query', required: ta.includes('required') || pathStr.includes(`{${name}}`), description: metaStr(m, 'description') || undefined, ...conv, example };
   });
 }
@@ -279,6 +282,7 @@ function build() {
           contractNotes: p.notes.length ? p.notes : undefined,
         };
         addMissingPathParams(e, p.src);
+        repairExample(e);
         endpoints.push(e);
         count++;
       }
@@ -329,6 +333,20 @@ try {
 // Some contracts put {placeholders} in the URL without declaring them (or declare them in a
 // non-standard spot drafter can't read). Add them so the page and the console can fill them in,
 // take an example from the contract text when there is one, and say so in a contract note.
+// Some contracts ship an example body that isn't valid JSON (single quotes, trailing
+// commas). The console won't send invalid JSON, so repair it and say so on the page.
+function repairExample(e) {
+  if (e.method !== 'POST' || !e.requestExample) return;
+  try { JSON.parse(e.requestExample); return; } catch { /* repair below */ }
+  const fixed = e.requestExample
+    .replace(/'([^'\\\n]*)'/g, (_, v) => JSON.stringify(v))
+    .replace(/,(\s*[}\]])/g, '$1');
+  try {
+    e.requestExample = JSON.stringify(JSON.parse(fixed), null, 2);
+    e.contractNotes = [...(e.contractNotes || []), "The contract's example request body isn't valid JSON (single quotes or trailing commas), so it was corrected here."];
+  } catch { /* leave as written; the console flags invalid JSON */ }
+}
+
 function addMissingPathParams(e, src) {
   const names = [...e.path.matchAll(/\{(\w+)\}/g)].map((m) => m[1]);
   const have = new Set((e.params || []).filter((x) => x.in === 'path').map((x) => x.name));
@@ -337,7 +355,7 @@ function addMissingPathParams(e, src) {
   const added = missing.map((name) => {
     const m = src.match(new RegExp('\\+\\s+`?' + name + '`?\\s*:\\s*`?([^`\\s(]+)`?\\s*\\(([^)]*)\\)(?:\\s*-\\s*(.+))?'));
     const param = { name, in: 'path', required: true, type: 'string' };
-    if (m) { param.example = m[1]; if (m[3]) param.description = m[3].trim(); }
+    if (m) { param.example = m[1].startsWith(`${name}=`) ? m[1].slice(name.length + 1) : m[1]; if (m[3]) param.description = m[3].trim(); }
     return param;
   });
   e.params = [...added, ...(e.params || [])];
