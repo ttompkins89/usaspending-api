@@ -1,5 +1,5 @@
 'use client';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 type Param = { name?: string; in?: 'path' | 'query'; required?: boolean; example?: unknown; default?: unknown; enum?: { value: unknown }[]; type: string };
 
@@ -13,7 +13,17 @@ function initial(p: Param) {
 export function Console({ method, path, params = [], requestExample, compact: small }: { method: string; path: string; params?: Param[]; requestExample?: string; compact?: boolean }) {
   const [values, setValues] = useState<Record<string, string>>(() => Object.fromEntries(params.map((p) => [p.name || '', initial(p)])));
   const [body, setBody] = useState(requestExample || '{}');
-  const [state, setState] = useState<{ status?: number; ms?: number; text?: string; error?: string; loading?: boolean; truncated?: boolean }>({});
+  const [state, setState] = useState<{ status?: number; ms?: number; text?: string; note?: string; error?: string; loading?: boolean; truncated?: boolean }>({});
+  const [elapsed, setElapsed] = useState(0);
+
+  // Some endpoints take 20 to 50 seconds, so show time passing while a request is open.
+  useEffect(() => {
+    if (!state.loading) return;
+    setElapsed(0);
+    const started = Date.now();
+    const t = setInterval(() => setElapsed(Math.floor((Date.now() - started) / 1000)), 1000);
+    return () => clearInterval(t);
+  }, [state.loading]);
 
   const built = useMemo(() => {
     let p = path;
@@ -43,10 +53,20 @@ export function Console({ method, path, params = [], requestExample, compact: sm
         body: method === 'POST' ? body : undefined,
       });
       const text = await res.text();
+      const ms = Math.round(performance.now() - started);
       let pretty = text;
-      try { pretty = JSON.stringify(JSON.parse(text), null, 2); } catch { /* not JSON */ }
+      let isJson = true;
+      try { pretty = JSON.stringify(JSON.parse(text), null, 2); } catch { isJson = false; }
+      // The API answers unknown routes with an HTML "Not Found" page. Explain it instead of printing markup.
+      if (!isJson && /<html|<!doctype/i.test(text)) {
+        const note = res.status === 404
+          ? 'api.usaspending.gov has no route at this URL. The contract documents it, but the live API returns its HTML "Not Found" page, so the endpoint may be retired or renamed.'
+          : `The API returned an HTML page instead of JSON (status ${res.status}).`;
+        setState({ status: res.status, ms, note });
+        return;
+      }
       const cap = 200_000;
-      setState({ status: res.status, ms: Math.round(performance.now() - started), text: pretty.length > cap ? `${pretty.slice(0, cap)}\n…` : pretty, truncated: pretty.length > cap || res.headers.get('x-truncated') === 'true' });
+      setState({ status: res.status, ms, text: pretty.length > cap ? `${pretty.slice(0, cap)}\n…` : pretty, truncated: pretty.length > cap || res.headers.get('x-truncated') === 'true' });
     } catch {
       setState({ error: 'The request didn’t complete. Check your connection and try again.' });
     }
@@ -91,8 +111,9 @@ export function Console({ method, path, params = [], requestExample, compact: sm
       ) : null}
       <div className="console-actions">
         <button type="button" className="button button-lg" onClick={send} disabled={state.loading || !!bodyError || built.missing}>
-          {state.loading ? 'Sending…' : 'Send request'}
+          {state.loading ? `Waiting… ${elapsed}s` : 'Send request'}
         </button>
+        {state.loading && elapsed >= 5 ? <span className="muted">Some endpoints take up to a minute to answer.</span> : null}
         {built.missing ? <span className="muted">Fill in the path parameters first.</span> : null}
       </div>
       <div aria-live="polite">
@@ -103,7 +124,7 @@ export function Console({ method, path, params = [], requestExample, compact: sm
               <span className={state.status < 400 ? 'ok' : 'bad'}>{state.status}</span> in {state.ms} ms
               {state.truncated ? <span className="muted"> · showing the first part of a large response</span> : null}
             </p>
-            <pre tabIndex={0} className="console-response" aria-label="Response body"><code>{state.text}</code></pre>
+            {state.note ? <p className="console-note">{state.note}</p> : <pre tabIndex={0} className="console-response" aria-label="Response body"><code>{state.text}</code></pre>}
           </div>
         ) : null}
       </div>
