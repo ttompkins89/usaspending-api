@@ -242,7 +242,8 @@ a.pill:hover { background: var(--c-surface-selected); color: var(--c-text-select
 .code-tab[aria-selected='true'] { color: var(--c-code-text); border-bottom-color: var(--c-accent); }
 .code-copy { display: inline-flex; align-items: center; gap: 6px; background: transparent; color: var(--c-code-text); border: 1px solid rgb(255 255 255 / 0.2); border-radius: var(--r-sm); font: inherit; font-size: 13px; font-weight: 700; min-height: 32px; padding: 0 var(--s-105); cursor: pointer; }
 .code-copy:hover { border-color: var(--c-code-text); }
-.code pre, .console pre { margin: 0; padding: var(--s-2); overflow: auto; max-height: 520px; color: var(--c-code-text); font-size: 13px; line-height: 1.6; background: transparent !important; }
+.code pre, .console-response { margin: 0; padding: var(--s-2); overflow: auto; max-height: 520px; color: var(--c-code-text); font-size: 13px; line-height: 1.6; }
+.code pre { background: transparent !important; }
 .code pre.shiki { background: transparent !important; }
 .code pre:focus-visible { outline-offset: -3px; }
 
@@ -265,7 +266,10 @@ a.pill:hover { background: var(--c-surface-selected); color: var(--c-text-select
 .console-status { font-weight: 700; color: var(--c-text-headline); }
 .console-status .ok { color: var(--c-get-text); }
 .console-status .bad { color: var(--c-danger); }
-.console-response { background: var(--c-code-bg); border-radius: var(--r-md); }
+.console-response { background: var(--c-code-bg); border: 1px solid var(--c-border); border-radius: var(--r-md); white-space: pre; }
+.console-response code { color: inherit; background: none; padding: 0; font-size: inherit; }
+.console-response:focus-visible { outline-offset: 2px; }
+.console-note { margin: 0; padding: var(--s-105) var(--s-2); border: 1px solid var(--c-border); border-left: 4px solid var(--c-accent); border-radius: var(--r-md); background: var(--c-surface-subtle); color: var(--c-text); }
 
 /* Prose */
 .prose { font-size: var(--font-size-17); }
