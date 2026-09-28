@@ -1,9 +1,9 @@
 {
-  "$description": "Generated from https://github.com/fedspendingtransparency/usaspending-website/blob/main/src/_scss/core/_variables.scss. Do not edit by hand.",
+  "$description": "Generated from https://github.com/fedspendingtransparency/usaspending-website/blob/86af01ba9ab403f2ed75f1d62a0dbcd35dbc4076/src/_scss/core/_variables.scss. Do not edit by hand.",
   "source": {
     "repo": "https://github.com/fedspendingtransparency/usaspending-website",
     "file": "src/_scss/core/_variables.scss",
-    "sha": null
+    "sha": "86af01ba9ab403f2ed75f1d62a0dbcd35dbc4076"
   },
   "color": {
     "red-warm-20v": {
