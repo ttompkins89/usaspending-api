@@ -1,9 +1,9 @@
 {
-  "$description": "Generated from https://github.com/fedspendingtransparency/usaspending-website/blob/86af01ba9ab403f2ed75f1d62a0dbcd35dbc4076/src/_scss/core/_variables.scss. Do not edit by hand.",
+  "$description": "Generated from https://github.com/fedspendingtransparency/usaspending-website/blob/d550b3e110ff2b495a642683be718b14a2373a9c/src/_scss/core/_variables.scss. Do not edit by hand.",
   "source": {
     "repo": "https://github.com/fedspendingtransparency/usaspending-website",
     "file": "src/_scss/core/_variables.scss",
-    "sha": "86af01ba9ab403f2ed75f1d62a0dbcd35dbc4076"
+    "sha": "d550b3e110ff2b495a642683be718b14a2373a9c"
   },
   "color": {
     "red-warm-20v": {
@@ -452,6 +452,13 @@
       "$value": "#252f3e",
       "$extensions": {
         "source": "$blue-warm-80: #252f3e"
+      }
+    },
+    "blue-10v": {
+      "$type": "color",
+      "$value": "#cfe8ff",
+      "$extensions": {
+        "source": "$blue-10v: #cfe8ff"
       }
     },
     "indigo-cool-5v": {
