@@ -1,9 +1,9 @@
 {
-  "$description": "Generated from https://github.com/fedspendingtransparency/usaspending-website/blob/3b823b7e10e508fb3d2d83b283b41101bf40abfd/src/_scss/core/_variables.scss. Do not edit by hand.",
+  "$description": "Generated from https://github.com/fedspendingtransparency/usaspending-website/blob/bf556d0a548311e53ac322e2bdb654522a8a8bd7/src/_scss/core/_variables.scss. Do not edit by hand.",
   "source": {
     "repo": "https://github.com/fedspendingtransparency/usaspending-website",
     "file": "src/_scss/core/_variables.scss",
-    "sha": "3b823b7e10e508fb3d2d83b283b41101bf40abfd"
+    "sha": "bf556d0a548311e53ac322e2bdb654522a8a8bd7"
   },
   "color": {
     "red-warm-20v": {
@@ -186,6 +186,13 @@
       "$value": "#ccecf2",
       "$extensions": {
         "source": "$cyan-10: #ccecf2"
+      }
+    },
+    "cyan-10v": {
+      "$type": "color",
+      "$value": "#a8f2ff",
+      "$extensions": {
+        "source": "$cyan-10v: #a8f2ff"
       }
     },
     "cyan-20": {
@@ -1130,7 +1137,7 @@
       "$type": "color",
       "$value": "#a8f2ff",
       "$extensions": {
-        "source": "$color-secondary-secondary-lighter: #a8f2ff"
+        "source": "$color-secondary-secondary-lighter: $cyan-10v"
       }
     },
     "color-secondary-lightest": {
